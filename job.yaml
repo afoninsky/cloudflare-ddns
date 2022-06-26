@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cloudflare-ddns
+  namespace: default
+spec:
+  # schedule: 0 * * * *
+  schedule: "*/10 * * * *"
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  successfulJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 30
+      backoffLimit: 3
+      template:
+        spec:
+          containers:
+          - name: ddns
+            image: afoninsky/cloudflare-ddns
+            env:
+            - name: CLOUDFLARE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: coredns-ddns
+                  key: CLOUDFLARE_API_TOKEN
+            - name: CLOUDFLARE_ZONE
+              valueFrom:
+                secretKeyRef:
+                  name: coredns-ddns
+                  key: CLOUDFLARE_ZONE
+          restartPolicy: OnFailure

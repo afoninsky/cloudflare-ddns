@@ -5,10 +5,10 @@ metadata:
   name: api
 build:
   artifacts:
-  - image: docker.jfrog.booking.com/projects/bplatform-infrastructure/bks-meta-container
-    custom:
-      buildCommand: sh scripts/buildx.sh
+  - image: afoninsky/cloudflare-ddns
+    # custom:
+    #   buildCommand: sh scripts/buildx.sh
 deploy:
-  kustomize:
-    paths:
-      - ./deploy
+  kubectl:
+    manifests:
+      - job.yaml
