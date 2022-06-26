@@ -5,5 +5,6 @@ Personal project for internal purposes so not much docs here. Fetches external I
 ```
 echo CLOUDFLARE_API_TOKEN=$CLOUDFLARE_API_TOKEN > /tmp/env
 echo CLOUDFLARE_ZONE=$CLOUDFLARE_ZONE >> /tmp/env
-kubectl create secret generic -n default coredns-ddns --from-env-file=/tmp/env
+kubectl create secret generic -n default cloudflare --from-env-file=/tmp/env
+kubectl create job --from=cronjob/ddns ddns-test
 ```
