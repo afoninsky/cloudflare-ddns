@@ -17,6 +17,7 @@ const timeout = 5 * time.Second
 
 func main() {
 	domain := os.Getenv("CLOUDFLARE_ZONE")
+	domainWild := fmt.Sprintf("*.%s", domain)
 	if domain == "" {
 		panic(errors.New("domain is not specified in CLOUDFLARE_ZONE"))
 	}
@@ -24,14 +25,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Setting IP %s for domain %s ...\n", ip, domain)
 
 	api, err := cloudflare.NewWithAPIToken(os.Getenv("CLOUDFLARE_API_TOKEN"))
 	if err != nil {
 		panic(err)
 	}
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
-	// Fetch the zone ID
 	zoneID, err := api.ZoneIDByName(domain)
 	if err != nil {
 		panic(err)
@@ -39,24 +38,27 @@ func main() {
 
 	records, err := api.DNSRecords(ctx, zoneID, cloudflare.DNSRecord{
 		Type: "A",
-		Name: domain,
 	})
 	if err != nil {
 		panic(err)
 	}
-	if len(records) != 1 {
-		panic(fmt.Errorf("need to create root domain %s", domain))
-	}
-	rec := records[0]
-	if rec.Content != ip {
+	found := false
+	for _, rec := range records {
+		if rec.Name != domain && rec.Name != domainWild {
+			continue
+		}
+		found = true
+		if rec.Content == ip {
+			continue
+		}
 		rec.Content = ip
 		rec.ModifiedOn = time.Now()
 		if err := api.UpdateDNSRecord(ctx, zoneID, rec.ID, rec); err != nil {
 			panic(err)
 		}
-		fmt.Println("Updated!!!")
-	} else {
-		fmt.Println("No updates")
+	}
+	if !found {
+		panic(fmt.Sprintf("neither %s not %s not found", domain, domainWild))
 	}
 }
 
